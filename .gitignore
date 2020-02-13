@@ -1,2 +1,5 @@
 # exclude the files that are only subsidiary for the project
 additional
+
+# any leftover image
+*.jpg
