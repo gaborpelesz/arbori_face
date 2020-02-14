@@ -40,14 +40,12 @@ def create():
             faces = config.RECOGNIZER.recognize(frame_to_detect)
             # print(faces)
             if faces is not None:
-                for i, detected_face in enumerate(faces):
+                COLOR = (0,255,0) if len(faces) == 1 else (0,0,255) # color red in BGR
+                THICKNESS = 2
+
+                for detected_face in faces:
                     detected_face = detected_face.astype(np.int)
 
-                    if i == 0:
-                        COLOR = (0,255,0)
-                    else:
-                        COLOR = (0,0,255) # color red in BGR
-                    THICKNESS = 2
                     left_top = detected_face[0], detected_face[1]
                     bottom_right = detected_face[2], detected_face[3]
 
