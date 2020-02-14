@@ -34,10 +34,21 @@ def create():
         if recording:
             ret, frame = cap.read()
 
-            # TODO RECOGNIZER
-
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             frame = cv2.resize(frame, (int(config.IMAGE_SIZE/frame.shape[0]*frame.shape[1]), int(config.IMAGE_SIZE)))
+
+            frame_to_detect = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            faces = config.RECOGNIZER.recognize(frame_to_detect)
+            # print(faces)
+            if faces is not None:
+                for detected_face in faces:
+                    detected_face = detected_face.astype(np.int)
+
+                    COLOR = (0,0,255) # color red in BGR
+                    THICKNESS = 2
+                    left_top = detected_face[0], detected_face[1]
+                    bottom_right = detected_face[2], detected_face[3]
+
+                    cv2.rectangle(frame, left_top, bottom_right, COLOR, THICKNESS)
 
             imgbytes = cv2.imencode('.png', frame)[1].tobytes()  # ditto
             window['image'].update(data=imgbytes)

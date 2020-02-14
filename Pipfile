@@ -9,6 +9,8 @@ verify_ssl = true
 pysimplegui = "*"
 opencv-python = "*"
 pillow = "*"
+insightface = "*"
+mxnet = "*"
 
 [requires]
 python_version = "3.7"

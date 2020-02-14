@@ -6,7 +6,7 @@ def main():
     sg.theme('Black')
 
     layout = [
-        [sg.Text('Face recognition demo app')],          
+        [sg.Text('Face recognition demo app', justification='center')],          
         [sg.Button('Recognize')],
         [sg.Button('Add person')],
         [sg.Button('List people')],
