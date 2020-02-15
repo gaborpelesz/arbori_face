@@ -15,6 +15,7 @@ def create():
     layout = [
         [sg.Text('OpenCV Demo', size=(40, 1), justification='center', font='Helvetica 20')],
         [sg.Image(filename='', key='image')],
+        [ sg.Button('Shoot photo', size=(10, 1), font='Helvetica 14'), ],
         [ sg.Button('Exit', size=(10, 1), font='Helvetica 14'), ]
     ]
 
