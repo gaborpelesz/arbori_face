@@ -3,3 +3,6 @@ additional
 
 # any leftover image
 *.jpg
+
+# local database
+app/data/*
