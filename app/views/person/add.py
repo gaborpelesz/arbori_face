@@ -39,7 +39,7 @@ def create():
 
             frame_to_detect = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             faces = config.RECOGNIZER.recognize(frame_to_detect)
-            # print(faces)
+            
             if faces is not None:
                 COLOR = (0,255,0) if len(faces) == 1 else (0,0,255) # color red in BGR
                 THICKNESS = 2
