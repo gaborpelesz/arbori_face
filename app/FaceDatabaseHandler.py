@@ -14,9 +14,9 @@ class FaceDatabaseHandler:
         self.cursor = self.connection.cursor()
 
         if not self._is_name_table_present():
-            self._create_table()
+            self._create_name_table()
 
-    def _create_table(self):
+    def _create_name_table(self):
         self.cursor.execute('CREATE TABLE people (name text PRIMARY KEY);')
     
     def _is_name_table_present(self):
