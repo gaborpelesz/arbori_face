@@ -55,12 +55,8 @@ class FaceDatabaseHandler:
         return names
 
     def get_person_embeddings(self, name):
-        try:
-            self.cursor.execute(f'SELECT embeddings FROM faces WHERE name=?;', [name])
-            embeddings = self.cursor.fetchall()
-        except sqlite3.OperationalError:
-            return []
-
+        self.cursor.execute(f'SELECT embeddings FROM faces WHERE name=?;', [name])
+        embeddings = self.cursor.fetchall()
         return self._eliminate_tuples(embeddings)
 
     def add_embedding(self, name, embedding):
