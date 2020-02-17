@@ -3,18 +3,21 @@ import numpy as np
 import io
 
 class FaceDatabaseHandler:
-    def __init__(self):
+    def __init__(self, db_name='data/faces.db'):
         # Converts np.array to TEXT when inserting
         sqlite3.register_adapter(np.ndarray, self._adapt_numpy_array)
         # Converts TEXT to np.array when selecting
         sqlite3.register_converter("nparray", self._convert_numpy_array)
 
         # connect to database
-        self.connection = sqlite3.connect('data/faces.db', detect_types=sqlite3.PARSE_DECLTYPES)
+        self.connection = sqlite3.connect(db_name, detect_types=sqlite3.PARSE_DECLTYPES)
         self.cursor = self.connection.cursor()
 
         if not self._is_name_table_present():
             self._create_name_table()
+
+    def __del__(self):
+        self.connection.close()
 
     def _create_name_table(self):
         self.cursor.execute('CREATE TABLE people (name text PRIMARY KEY);')
@@ -59,14 +62,14 @@ class FaceDatabaseHandler:
 
         return self._eliminate_tuples(embeddings)
 
-    def add_embedding(self, name, embeddings):
+    def add_embedding(self, name, embedding):
         try:
             self.cursor.execute('INSERT INTO people VALUES (?);', [name])
             self.cursor.execute(f'CREATE TABLE {name} (embeddings nparray);')
         except sqlite3.IntegrityError:
             pass
         finally:
-            self.cursor.execute(f'INSERT INTO {name} VALUES (?);', [embeddings])
+            self.cursor.execute(f'INSERT INTO {name} VALUES (?);', [embedding])
             self.connection.commit()
 
     def delete_person(self, name):
