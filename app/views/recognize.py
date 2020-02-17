@@ -2,12 +2,15 @@ import config
 import PySimpleGUI as sg
 import cv2
 import numpy as np
+from Controller import Controller
 
 """
 Demo program that displays a webcam using OpenCV
 """
 
-def create():
+def create(controller=None):
+    if controller is None:
+        controller = Controller()
 
     sg.theme('Black')
 
@@ -34,23 +37,9 @@ def create():
         if recording:
             ret, frame = cap.read()
 
-            frame = cv2.resize(frame, (int(config.IMAGE_SIZE/frame.shape[0]*frame.shape[1]), int(config.IMAGE_SIZE)))
+            window_image = controller.handle_recognition(frame)
 
-            frame_to_detect = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            faces = config.RECOGNIZER.recognize(frame_to_detect)
-            # print(faces)
-            if faces is not None:
-                for detected_face in faces:
-                    detected_face = detected_face.astype(np.int)
-
-                    COLOR = (0,0,255) # color red in BGR
-                    THICKNESS = 2
-                    left_top = detected_face[0], detected_face[1]
-                    bottom_right = detected_face[2], detected_face[3]
-
-                    cv2.rectangle(frame, left_top, bottom_right, COLOR, THICKNESS)
-
-            imgbytes = cv2.imencode('.png', frame)[1].tobytes()  # ditto
+            imgbytes = cv2.imencode('.png', window_image)[1].tobytes()  # ditto
             window['image'].update(data=imgbytes)
 
     window.close()

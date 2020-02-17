@@ -33,7 +33,8 @@ class RetinaFace(FaceDetector):
         dist = np.sqrt((dX ** 2) + (dY ** 2))
         desiredDist = (desiredRightEyeX - self.desiredLeftEye[0])
         desiredDist *= self.desiredFaceWidth
-        scale = desiredDist / dist
+
+        scale = desiredDist / dist if dist != 0 else 0
 
         M = cv2.getRotationMatrix2D(eyesCenter, angle, scale)
 

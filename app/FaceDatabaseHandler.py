@@ -55,7 +55,7 @@ class FaceDatabaseHandler:
         return names
 
     def get_person_embeddings(self, name):
-        self.cursor.execute(f'SELECT embeddings FROM faces WHERE name=?;', [name])
+        self.cursor.execute('SELECT embeddings FROM faces WHERE name=?;', (name,))
         embeddings = self.cursor.fetchall()
         return self._eliminate_tuples(embeddings)
 
@@ -64,5 +64,10 @@ class FaceDatabaseHandler:
         self.connection.commit()
 
     def delete_person(self, name):
-        self.cursor.execute('DELETE FROM faces WHERE name=?;', [name])
+        self.cursor.execute('DELETE FROM faces WHERE name=?;', (name,))
         self.connection.commit()
+
+    def get_all_faces(self):
+        self.cursor.execute('SELECT * FROM faces;')
+        data = self.cursor.fetchall()
+        return data

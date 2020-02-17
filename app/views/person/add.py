@@ -4,7 +4,9 @@ import cv2
 import numpy as np
 from Controller import Controller
 
-def create():
+def create(controller=None):
+    if controller is None:
+        controller = Controller()
 
     sg.theme('Black')
 
@@ -19,11 +21,10 @@ def create():
 
     # create the window and show it without the plot
     window = sg.Window(config.WINDOW_TITLE,
-                       layout, location=(0, 0))
+                       layout)
 
     # ---===--- Event LOOP Read and display frames, operate the GUI --- #
     cap = cv2.VideoCapture(0)
-    controller = Controller()
     recording = True
     is_error_counter_on = False
     error_counter = 0

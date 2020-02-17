@@ -1,6 +1,7 @@
 import config
 import insightface
 import recognition.FaceRecognizer
+import numpy as np
 
 class InsightFace(recognition.FaceRecognizer.FaceRecognizer):
     def __init__(self):
@@ -14,3 +15,9 @@ class InsightFace(recognition.FaceRecognizer.FaceRecognizer):
     def get_embedding(self, face):
         emb = self.model.get_embedding(face)
         return emb
+
+    def compare_embeddings(self, embedding1, embedding2):
+        dist = np.sum(np.square(embedding1-embedding2))
+        sim = np.dot(embedding1, embedding2.T)
+        #print('dist:', dist, '\tsim:', sim)
+        return dist, sim
