@@ -25,9 +25,11 @@ class Controller:
 
         if faces is not None:
             for i, detected_face in enumerate(faces):
-                for j in range(len(detected_face)):
-                    detected_face[j] += -added_margin_pixels if j < 2 else added_margin_pixels
-                    detected_face[j] = 0 if detected_face[j] < 0 else frame.shape[abs(j%2-1)] if frame.shape[abs(j%2-1)] < detected_face[j] else detected_face[j]
+
+                # # add margin and normalize outliers
+                # for j in range(len(detected_face)):
+                #     detected_face[j] += -added_margin_pixels if j < 2 else added_margin_pixels
+                #     detected_face[j] = 0 if detected_face[j] < 0 else frame.shape[abs(j%2-1)] if frame.shape[abs(j%2-1)] < detected_face[j] else detected_face[j]
                 
                 top_left = detected_face[0], detected_face[1] # x, y
                 bottom_right = detected_face[2], detected_face[3] # x, y
@@ -42,11 +44,11 @@ class Controller:
                 cv2.circle(frame, tuple(right_eye), 2, (0,0,255), thickness=2)
                 cv2.circle(frame, tuple(left_eye), 2, (0,0,255), thickness=2)
 
-        return frame
+        return frame, len(faces)
 
     def handle_add_person(self, name):
         if self.ready_to_save_face is None:
-            return None
+            return
         result_embedding = config.RECOGNIZER.get_embedding(self.ready_to_save_face)[0]
         self.database.add_embedding(name, result_embedding)
         print('Adding face was successful!')

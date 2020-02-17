@@ -27,6 +27,7 @@ def create():
     recording = True
     is_error_counter_on = False
     error_counter = 0
+    detected_face_count = 0
 
     while True:
         event, values = window.read(timeout=20)
@@ -34,24 +35,30 @@ def create():
             break
 
         if event == 'Shoot photo':
-            if ret is None:
-                window['-error-text-'].update('No face was detected')
-                is_error_counter_on = True
+
             if values['-name-'] == '':
                 window['-error-text-'].update('No name was specified')
+                error_counter = 0
+                is_error_counter_on = True
+            elif detected_face_count > 1:
+                window['-error-text-'].update('Too many faces were detected')
+                error_counter = 0
+                is_error_counter_on = True
+            elif detected_face_count == 0:
+                window['-error-text-'].update('No face was detected')
+                error_counter = 0
                 is_error_counter_on = True
             else:
                 controller.handle_add_person(values['-name-'])
 
         if recording:
             ret, frame = cap.read()
-            window_image = controller.handle_detection_live_feed(frame)
+            window_image, detected_face_count = controller.handle_detection_live_feed(frame)
             imgbytes = cv2.imencode('.png', window_image)[1].tobytes()
             window['image'].update(data=imgbytes)
 
         # Handling User errors
         if error_counter == 10:
-            error_counter = 0
             is_error_counter_on = False
             window['-error-text-'].update('')
         if is_error_counter_on:
