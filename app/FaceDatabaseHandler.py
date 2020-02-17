@@ -13,18 +13,18 @@ class FaceDatabaseHandler:
         self.connection = sqlite3.connect(db_name, detect_types=sqlite3.PARSE_DECLTYPES)
         self.cursor = self.connection.cursor()
 
-        if not self._is_name_table_present():
-            self._create_name_table()
+        if not self._is_face_table_present():
+            self._create_face_table()
 
     def __del__(self):
         self.connection.close()
 
-    def _create_name_table(self):
-        self.cursor.execute('CREATE TABLE people (name text PRIMARY KEY);')
+    def _create_face_table(self):
+        self.cursor.execute('CREATE TABLE faces (name text, embeddings nparray);')
     
-    def _is_name_table_present(self):
+    def _is_face_table_present(self):
         try:
-            self.cursor.execute('SELECT * FROM people LIMIT 1;')
+            self.cursor.execute('SELECT * FROM faces LIMIT 1;')
         except sqlite3.OperationalError:
             return False
         return True
@@ -48,14 +48,15 @@ class FaceDatabaseHandler:
 
 
     def get_people_names(self):
-        self.cursor.execute('SELECT name FROM people;')
+        self.cursor.execute('SELECT name FROM faces;')
         names = self.cursor.fetchall()
-
-        return self._eliminate_tuples(names)
+        names = self._eliminate_tuples(names)
+        names = list(set(names)) # keep unique elements only
+        return names
 
     def get_person_embeddings(self, name):
         try:
-            self.cursor.execute(f'SELECT embeddings FROM {name};')
+            self.cursor.execute(f'SELECT embeddings FROM faces WHERE name=?;', name)
             embeddings = self.cursor.fetchall()
         except sqlite3.OperationalError:
             return []
@@ -63,16 +64,9 @@ class FaceDatabaseHandler:
         return self._eliminate_tuples(embeddings)
 
     def add_embedding(self, name, embedding):
-        try:
-            self.cursor.execute('INSERT INTO people VALUES (?);', [name])
-            self.cursor.execute(f'CREATE TABLE {name} (embeddings nparray);')
-        except sqlite3.IntegrityError:
-            pass
-        finally:
-            self.cursor.execute(f'INSERT INTO {name} VALUES (?);', [embedding])
-            self.connection.commit()
+        self.cursor.execute('INSERT INTO faces VALUES (?, ?);', (name, embedding))
+        self.connection.commit()
 
     def delete_person(self, name):
-        self.cursor.execute('DELETE FROM people WHERE name=?;', [name])
-        self.cursor.execute(f'DROP TABLE {name};')
+        self.cursor.execute('DELETE FROM faces WHERE name=?;', [name])
         self.connection.commit()
