@@ -11,3 +11,6 @@ RECOGNIZER = recognition.InsightFace.InsightFace()
 
 # Face recognition parameters
 UNKNOWN_DISTANCE_THRESHOLD = 320
+UNKNOWN_SIMILARITY_THRESHOLD = 100
+SIMILARITY_MEASURE = True
+K_NEIGHBORS = 1

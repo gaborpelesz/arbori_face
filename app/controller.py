@@ -32,23 +32,21 @@ class Controller:
                 # for j in range(len(detected_face)):
                 #     detected_face[j] += -added_margin_pixels if j < 2 else added_margin_pixels
                 #     detected_face[j] = 0 if detected_face[j] < 0 else frame.shape[abs(j%2-1)] if frame.shape[abs(j%2-1)] < detected_face[j] else detected_face[j]
-                
-                top_left = detected_face[0], detected_face[1] # x, y
-                bottom_right = detected_face[2], detected_face[3] # x, y
-                
-                right_eye = landmarks[i][0]
-                left_eye = landmarks[i][1]
 
                 if is_shoot_available:
-                    self.ready_to_save_face = config.DETECTOR.align_face(frame, right_eye, left_eye)
-
-                cv2.rectangle(frame, top_left, bottom_right, COLOR, THICKNESS)
+                    # self.ready_to_save_face = config.DETECTOR.align_face(frame, landmarks[i])
+                    self.ready_to_save_face = config.DETECTOR.preprocess_face(frame, detected_face, landmarks[i])
+                else:
+                    top_left = detected_face[0], detected_face[1] # x, y
+                    bottom_right = detected_face[2], detected_face[3] # x, y
+                    cv2.rectangle(frame, top_left, bottom_right, COLOR, THICKNESS)
 
                 # optional circles at eyes
                 # cv2.circle(frame, tuple(right_eye), 2, (0,0,255), thickness=2)
                 # cv2.circle(frame, tuple(left_eye), 2, (0,0,255), thickness=2)
 
-        return frame, len(faces)
+        window_image = self.ready_to_save_face if is_shoot_available else frame
+        return window_image, len(faces)
 
     def handle_add_person(self, name):
         if self.ready_to_save_face is None:
@@ -76,17 +74,13 @@ class Controller:
         FONT_SCALE = 0.5
 
         for i in range(len(detected_faces)):
-            top_left = detected_faces[i][0], detected_faces[i][1] # x, y
-            bottom_right = detected_faces[i][2], detected_faces[i][3] # x, y
-
-            right_eye = landmarks[i][0]
-            left_eye = landmarks[i][1]
-
-            aligned_detected_face = config.DETECTOR.align_face(frame, right_eye, left_eye)
+            aligned_detected_face = config.DETECTOR.preprocess_face(frame, detected_faces[i], landmarks[i])
             name = self.recognize_person(aligned_detected_face, db_faces)
 
-            COLOR = (0,0,255) if name == 'Unknown' else (0,255,0)
+            COLOR = (0,0,255) if name.startswith('Unknown') else (0,255,0)
 
+            top_left = detected_faces[i][0], detected_faces[i][1] # x, y
+            bottom_right = detected_faces[i][2], detected_faces[i][3] # x, y
             cv2.rectangle(frame, top_left, bottom_right, COLOR, THICKNESS)
             cv2.putText(frame, name, (top_left[0], top_left[1]-5), cv2.FONT_HERSHEY_SIMPLEX, FONT_SCALE, COLOR, 1, cv2.LINE_AA)
 
@@ -97,33 +91,44 @@ class Controller:
         if len(db_faces) < 5:
             return 'Unknown'
 
+        distances = self._calculate_distances(face_to_recognize, db_faces)
+
+        similarities = list(zip(*distances))[0]
+        similarities = np.array(similarities, dtype=np.float64)
+        confidence_percentage = (np.exp(similarities) / np.sum(np.exp(similarities)))[0]
+
+        if config.SIMILARITY_MEASURE:
+            if similarities[0] < config.UNKNOWN_SIMILARITY_THRESHOLD:
+                return f'Unknown-{confidence_percentage*100:.1f}%'
+        elif distances[0][1] > config.UNKNOWN_DISTANCE_THRESHOLD:
+            return 'Unknown'
+
+        predicted_name = distances[0][2]
+        if config.K_NEIGHBORS > 1:
+            # K-NN
+            k_neighbors = config.K_NEIGHBORS
+            k_nearest_names = dict(Counter(list(zip(*distances[:k_neighbors]))[2]))
+            predicted_name = max(k_nearest_names.items(), key=operator.itemgetter(1))[0]
+
+        return f'{predicted_name}-{confidence_percentage*100:.1f}%'
+
+    def _calculate_distances(self, face_to_recognize, db_faces):
+        is_reverse = False
+        index_of_value = 1
+        
+        if config.SIMILARITY_MEASURE:
+            is_reverse = True
+            index_of_value = 0 # distances array will contain sim in the first elements
+
         embedding_to_recognize = config.RECOGNIZER.get_embedding(face_to_recognize)[0]
 
         distances = []
         for db_face in db_faces:
             name, embedding = db_face
             dist, sim = config.RECOGNIZER.compare_embeddings(embedding_to_recognize, embedding)
-            distances.append((dist, name))
+            distances.append((sim, dist, name))
 
-        distances = sorted(distances, key=lambda x: x[0])
-        #print(distances, '\n')
-        # return distances[0][1]
-
-        db_faces = sorted(db_faces, key=lambda face: self._face_sort_comparison(face,embedding_to_recognize))
-
-        if distances[0][0] > config.UNKNOWN_DISTANCE_THRESHOLD:
-            return 'Unknown'
-
-        # K-NN
-        k_neighbors = 3
-        k_nearest_names = dict(Counter(list(zip(*db_faces[:k_neighbors]))[0]))
-        predicted_name = max(k_nearest_names.items(), key=operator.itemgetter(1))[0]
-        return predicted_name
-
-    def _face_sort_comparison(self, face, embedding_to_recognize):
-        name, embedding = face
-        dist, sim = config.RECOGNIZER.compare_embeddings(embedding_to_recognize, embedding)
-        return dist
+        return sorted(distances, key=lambda x: x[index_of_value], reverse=is_reverse)
 
 
 
