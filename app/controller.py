@@ -106,17 +106,17 @@ class Controller:
             distances.append((dist, name))
 
         distances = sorted(distances, key=lambda x: x[0])
-        print(distances, '\n')
+        #print(distances, '\n')
         # return distances[0][1]
 
         db_faces = sorted(db_faces, key=lambda face: self._face_sort_comparison(face,embedding_to_recognize))
 
-        if distances[0][0] > 300:
+        if distances[0][0] > config.UNKNOWN_DISTANCE_THRESHOLD:
             return 'Unknown'
 
-        k_nearest = 3
         # K-NN
-        k_nearest_names = dict(Counter(list(zip(*db_faces[:k_nearest]))[0]))
+        k_neighbors = 3
+        k_nearest_names = dict(Counter(list(zip(*db_faces[:k_neighbors]))[0]))
         predicted_name = max(k_nearest_names.items(), key=operator.itemgetter(1))[0]
         return predicted_name
 
