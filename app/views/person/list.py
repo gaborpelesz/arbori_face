@@ -14,14 +14,14 @@ def create(controller=None):
             sg.Button('Delete person', font='Helvetica 14', key=name)]
         for name in all_names]
 
-    layout.append([sg.Quit('Exit')])
+    layout.append([sg.Quit('Back')])
 
     # create the window and show it without the plot
     window = sg.Window(config.WINDOW_TITLE, layout, size=(400, 300))
 
     while True:
         event, values = window.read()
-        if event in (None, 'Exit'):
+        if event in (None, 'Back'):
             break
         if event in all_names:
             person_name = event

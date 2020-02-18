@@ -16,7 +16,7 @@ def create(controller=None):
         [sg.Image(filename='', key='image')],
         [sg.Button('Shoot photo', size=(10, 1), font='Helvetica 14')],
         [sg.Text('Enter name:'), sg.InputText(size=(10,1), key='-name-'), sg.Text(size=(40,1), key='-error-text-', text_color='red')],
-        [sg.Button('Exit', size=(10, 1), font='Helvetica 14')]
+        [sg.Button('Back', size=(10, 1), font='Helvetica 14')]
     ]
 
     # create the window and show it without the plot
@@ -32,7 +32,7 @@ def create(controller=None):
 
     while True:
         event, values = window.read(timeout=20)
-        if event == 'Exit' or event is None:
+        if event == 'Back' or event is None:
             break
 
         if event == 'Shoot photo':

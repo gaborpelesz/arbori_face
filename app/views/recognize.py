@@ -18,12 +18,12 @@ def create(controller=None):
     layout = [
         [sg.Text('OpenCV Demo', size=(40, 1), justification='center', font='Helvetica 20')],
         [sg.Image(filename='', key='image')],
-        [ sg.Button('Exit', size=(10, 1), font='Helvetica 14'), ]
+        [ sg.Button('Back', size=(10, 1), font='Helvetica 14'), ]
     ]
 
     # create the window and show it without the plot
     window = sg.Window(config.WINDOW_TITLE,
-                       layout, location=(0, 0))
+                       layout)
 
     # ---===--- Event LOOP Read and display frames, operate the GUI --- #
     cap = cv2.VideoCapture(0)
@@ -31,7 +31,7 @@ def create(controller=None):
 
     while True:
         event, values = window.read(timeout=20)
-        if event == 'Exit' or event is None:
+        if event == 'Back' or event is None:
             break
 
         if recording:
