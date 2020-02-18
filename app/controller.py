@@ -4,6 +4,8 @@ import numpy as np
 from FaceDatabaseHandler import FaceDatabaseHandler
 from collections import Counter
 import operator
+import time
+import multiprocessing
 
 class Controller:
     def __init__(self):
@@ -27,23 +29,12 @@ class Controller:
 
         if faces is not None:
             for i, detected_face in enumerate(faces):
-
-                # # add margin and normalize outliers
-                # for j in range(len(detected_face)):
-                #     detected_face[j] += -added_margin_pixels if j < 2 else added_margin_pixels
-                #     detected_face[j] = 0 if detected_face[j] < 0 else frame.shape[abs(j%2-1)] if frame.shape[abs(j%2-1)] < detected_face[j] else detected_face[j]
-
                 if is_shoot_available:
-                    # self.ready_to_save_face = config.DETECTOR.align_face(frame, landmarks[i])
                     self.ready_to_save_face = config.DETECTOR.preprocess_face(frame, detected_face, landmarks[i])
                 else:
                     top_left = detected_face[0], detected_face[1] # x, y
                     bottom_right = detected_face[2], detected_face[3] # x, y
                     cv2.rectangle(frame, top_left, bottom_right, COLOR, THICKNESS)
-
-                # optional circles at eyes
-                # cv2.circle(frame, tuple(right_eye), 2, (0,0,255), thickness=2)
-                # cv2.circle(frame, tuple(left_eye), 2, (0,0,255), thickness=2)
 
         window_image = self.ready_to_save_face if is_shoot_available else frame
         return window_image, len(faces)
@@ -67,25 +58,34 @@ class Controller:
 
         frame = cv2.resize(frame, (int(config.IMAGE_SIZE/frame.shape[0]*frame.shape[1]), int(config.IMAGE_SIZE)))
         frame_to_detect = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        detected_faces, landmarks = config.DETECTOR.detect(frame_to_detect)
+        detected_face_bboxes, landmarks = config.DETECTOR.detect(frame_to_detect)
 
-
-        THICKNESS = 2
-        FONT_SCALE = 0.5
-
-        for i in range(len(detected_faces)):
-            aligned_detected_face = config.DETECTOR.preprocess_face(frame, detected_faces[i], landmarks[i])
-            name = self.recognize_person(aligned_detected_face, db_faces)
-
-            COLOR = (0,0,255) if name.startswith('Unknown') else (0,255,0)
-
-            top_left = detected_faces[i][0], detected_faces[i][1] # x, y
-            bottom_right = detected_faces[i][2], detected_faces[i][3] # x, y
-            cv2.rectangle(frame, top_left, bottom_right, COLOR, THICKNESS)
-            cv2.putText(frame, name, (top_left[0], top_left[1]-5), cv2.FONT_HERSHEY_SIMPLEX, FONT_SCALE, COLOR, 1, cv2.LINE_AA)
-
+        t_start = time.time()
+        processes = []
+        for detected_face in zip(detected_face_bboxes, landmarks):
+            # self.process_recognition(frame, detected_face, db_faces)
+            process = multiprocessing.Process(target=self.process_recognition, args=(frame, detected_face, db_faces))
+            process.start()
+            processes.append(thread)
+        
+        for process in processes:
+            process.join()
+        print(f'runtime: {(time.time() - t_start) * 1000:0.2f}ms')
         return frame
 
+    def process_recognition(self, frame, detected_face, db_faces):
+        face_bbox = detected_face[0]
+        landmarks = detected_face[1]
+
+        aligned_detected_face = config.DETECTOR.preprocess_face(frame, face_bbox, landmarks)
+        name = self.recognize_person(aligned_detected_face, db_faces)
+
+        COLOR = (0,0,255) if name.startswith('Unknown') else (0,255,0)
+
+        top_left = face_bbox[0], face_bbox[1] # x, y
+        bottom_right = face_bbox[2], face_bbox[3] # x, y
+        cv2.rectangle(frame, top_left, bottom_right, COLOR, 2)
+        cv2.putText(frame, name, (top_left[0], top_left[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLOR, 1, cv2.LINE_AA)
 
     def recognize_person(self, face_to_recognize, db_faces):
         if len(db_faces) < 5:
@@ -114,21 +114,22 @@ class Controller:
 
     def _calculate_distances(self, face_to_recognize, db_faces):
         is_reverse = False
-        index_of_value = 1
+        choosen_measurement = 1
         
         if config.SIMILARITY_MEASURE:
             is_reverse = True
-            index_of_value = 0 # distances array will contain sim in the first elements
+            choosen_measurement = 0 # distances array will contain sim in the first elements
 
         embedding_to_recognize = config.RECOGNIZER.get_embedding(face_to_recognize)[0]
 
         distances = []
+
         for db_face in db_faces:
             name, embedding = db_face
             dist, sim = config.RECOGNIZER.compare_embeddings(embedding_to_recognize, embedding)
             distances.append((sim, dist, name))
 
-        return sorted(distances, key=lambda x: x[index_of_value], reverse=is_reverse)
+        return sorted(distances, key=lambda x: x[choosen_measurement], reverse=is_reverse)
 
 
 
