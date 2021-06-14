@@ -5,7 +5,6 @@ from FaceDatabaseHandler import FaceDatabaseHandler
 from collections import Counter
 import operator
 import time
-import multiprocessing
 
 class Controller:
     def __init__(self):
@@ -60,25 +59,20 @@ class Controller:
         frame_to_detect = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         detected_face_bboxes, landmarks = config.DETECTOR.detect(frame_to_detect)
 
-        t_start = time.time()
+        
         processes = []
         for detected_face in zip(detected_face_bboxes, landmarks):
-            # self.process_recognition(frame, detected_face, db_faces)
-            process = multiprocessing.Process(target=self.process_recognition, args=(frame, detected_face, db_faces))
-            process.start()
-            processes.append(thread)
-        
-        for process in processes:
-            process.join()
-        print(f'runtime: {(time.time() - t_start) * 1000:0.2f}ms')
+            face_bbox = detected_face[0]
+            landmarks = detected_face[1]
+            aligned_detected_face = config.DETECTOR.preprocess_face(frame, face_bbox, landmarks)
+            self.process_recognition(frame, face_bbox, aligned_detected_face, db_faces)
+
         return frame
 
-    def process_recognition(self, frame, detected_face, db_faces):
-        face_bbox = detected_face[0]
-        landmarks = detected_face[1]
-
-        aligned_detected_face = config.DETECTOR.preprocess_face(frame, face_bbox, landmarks)
+    def process_recognition(self, frame, face_bbox, aligned_detected_face, db_faces):
+        t_start = time.time()
         name = self.recognize_person(aligned_detected_face, db_faces)
+        print(f'recognition runtime: {(time.time() - t_start) * 1000:0.2f}ms')
 
         COLOR = (0,0,255) if name.startswith('Unknown') else (0,255,0)
 
@@ -92,12 +86,13 @@ class Controller:
             return 'Unknown'
 
         distances = self._calculate_distances(face_to_recognize, db_faces)
+        #print(distances, '\n')
 
         similarities = list(zip(*distances))[0]
         similarities = np.array(similarities, dtype=np.float64)
         confidence_percentage = (np.exp(similarities) / np.sum(np.exp(similarities)))[0]
 
-        if config.SIMILARITY_MEASURE:
+        if config.USE_SIMILARITY_MEASUREMENT:
             if similarities[0] < config.UNKNOWN_SIMILARITY_THRESHOLD:
                 return f'Unknown-{confidence_percentage*100:.1f}%'
         elif distances[0][1] > config.UNKNOWN_DISTANCE_THRESHOLD:
@@ -116,20 +111,20 @@ class Controller:
         is_reverse = False
         choosen_measurement = 1
         
-        if config.SIMILARITY_MEASURE:
+        if config.USE_SIMILARITY_MEASUREMENT:
             is_reverse = True
-            choosen_measurement = 0 # distances array will contain sim in the first elements
+            choosen_measurement = 0 # measurements array will contain sim in the first elements
 
         embedding_to_recognize = config.RECOGNIZER.get_embedding(face_to_recognize)[0]
 
-        distances = []
+        measurements = []
 
         for db_face in db_faces:
             name, embedding = db_face
             dist, sim = config.RECOGNIZER.compare_embeddings(embedding_to_recognize, embedding)
-            distances.append((sim, dist, name))
+            measurements.append((sim, dist, name))
 
-        return sorted(distances, key=lambda x: x[choosen_measurement], reverse=is_reverse)
+        return sorted(measurements, key=lambda x: x[choosen_measurement], reverse=is_reverse)
 
 
 

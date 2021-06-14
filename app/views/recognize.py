@@ -4,10 +4,6 @@ import cv2
 import numpy as np
 from Controller import Controller
 
-"""
-Demo program that displays a webcam using OpenCV
-"""
-
 def create(controller=None):
     if controller is None:
         controller = Controller()
@@ -16,7 +12,7 @@ def create(controller=None):
 
     # define the window layout
     layout = [
-        [sg.Text('OpenCV Demo', size=(40, 1), justification='center', font='Helvetica 20')],
+        [sg.Text('Demo face recognition', size=(40, 1), justification='center', font='Helvetica 20')],
         [sg.Image(filename='', key='image')],
         [ sg.Button('Back', size=(10, 1), font='Helvetica 14'), ]
     ]

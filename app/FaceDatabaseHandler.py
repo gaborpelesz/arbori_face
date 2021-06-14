@@ -1,13 +1,19 @@
 import sqlite3
 import numpy as np
 import io
+import os
 
 class FaceDatabaseHandler:
-    def __init__(self, db_name='data/faces.db'):
+    def __init__(self, db_name='app/data/faces.db'):
         # Converts np.array to TEXT when inserting
         sqlite3.register_adapter(np.ndarray, self._adapt_numpy_array)
         # Converts TEXT to np.array when selecting
         sqlite3.register_converter("nparray", self._convert_numpy_array)
+
+        # check for data folder
+        assert os.path.exists('app/data'), 'folder "data" not exists!\
+            \n - Verify that the script was executed by running "python app"'
+        assert os.path.isdir('app/data'), '"data" is not a folder!'
 
         # connect to database
         self.connection = sqlite3.connect(db_name, detect_types=sqlite3.PARSE_DECLTYPES)

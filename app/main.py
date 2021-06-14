@@ -36,4 +36,6 @@ def main():
     window.close()
 
 if __name__ == '__main__':
-    main()
+    print('WARNING:')
+    print(' - Deprecated running of the program...')
+    print(' - Please run by executing "python app" from the root of the repository instead.')

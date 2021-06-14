@@ -25,21 +25,20 @@ def create(controller=None):
             break
         if event in all_names:
             person_name = event
-            print('deleting person')
             pop_up_layout = [
-                [sg.Text(f'Do you want to delete "{person_name}"')],
-                [sg.Submit(), sg.Cancel()]
+                [sg.Text(f'Do you want to delete "{person_name}"?')],
+                [sg.Button('Yes', key='delete'), sg.Cancel('No', key='cancel')]
             ]
             sg.theme('Black')
             pop_up_menu = sg.Window(config.WINDOW_TITLE, pop_up_layout, size=(200, 100))
             while True:
                 event, values = pop_up_menu.read()
-                if event is 'Submit':
+                if event is 'delete':
                     controller.delete_person(person_name)
                     pop_up_menu.close()
                     window.close()
                     return
-                if event is 'Cancel':
+                if event in (None, 'cancel'):
                     pop_up_menu.close()
                     break
 

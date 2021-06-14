@@ -12,7 +12,7 @@ def create(controller=None):
 
     # define the window layout
     layout = [
-        [sg.Text('OpenCV Demo', size=(40, 1), justification='center', font='Helvetica 20')],
+        [sg.Text('Demo face recognition', size=(40, 1), justification='center', font='Helvetica 20')],
         [sg.Image(filename='', key='image')],
         [sg.Button('Shoot photo', size=(10, 1), font='Helvetica 14')],
         [sg.Text('Enter name:'), sg.InputText(size=(10,1), key='-name-'), sg.Text(size=(40,1), key='-error-text-', text_color='red')],
@@ -32,7 +32,7 @@ def create(controller=None):
 
     while True:
         event, values = window.read(timeout=20)
-        if event == 'Back' or event is None:
+        if event in ('Back', None):
             break
 
         if event == 'Shoot photo':

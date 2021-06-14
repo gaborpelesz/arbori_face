@@ -12,6 +12,3 @@ pillow = "*"
 insightface = "*"
 mxnet = "*"
 scikit-image = "*"
-
-[requires]
-python_version = "3.7"
